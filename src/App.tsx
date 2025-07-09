@@ -1,4 +1,4 @@
-import './App.css'
+import './App.css';
 import { useState, useEffect, useCallback } from 'react';
 
 // Components
@@ -15,10 +15,22 @@ import { findBestMove } from './services/ai';
 import { calculateRewards } from './services/economyUtils';
 import type { BoardState, GameMode, DifficultyLevel, BoardSize } from './services/types';
 import { useCoins, useXP } from './services/store';
-import { playMoveSound, playWinSound, initBackgroundMusic, toggleBackgroundMusic, stopBackgroundMusic } from './services/sounds';
+import {
+  playMoveSound,
+  playWinSound,
+  initBackgroundMusic,
+  toggleBackgroundMusic,
+  stopBackgroundMusic,
+} from './services/sounds';
 
 // Firebase
-import { signInWithGoogle, signOutUser, onAuthStateChangedListener, saveEconomyToFirestore, loadEconomyFromFirestore } from './services/firebase';
+import {
+  signInWithGoogle,
+  signOutUser,
+  onAuthStateChangedListener,
+  saveEconomyToFirestore,
+  loadEconomyFromFirestore,
+} from './services/firebase';
 
 function App() {
   const [boards, setBoards] = useState<BoardState[]>([]);
@@ -38,7 +50,6 @@ function App() {
 
   const [player1Name, setPlayer1Name] = useState('Player 1');
   const [player2Name, setPlayer2Name] = useState('Player 2');
-
   const [showNameModal, setShowNameModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
@@ -54,13 +65,16 @@ function App() {
     toggleBackgroundMusic(mute);
   }, [mute]);
 
-  const resetGame = useCallback((num: number, size: BoardSize) => {
-    const initialBoards = Array(num).fill(null).map(() => Array(size * size).fill(''));
-    setBoards(initialBoards);
-    setCurrentPlayer(1);
-    setGameHistory([initialBoards]);
-    setShowWinnerModal(false);
-  }, []);
+  const resetGame = useCallback(
+    (num: number, size: BoardSize) => {
+      const initialBoards = Array(num).fill(null).map(() => Array(size * size).fill(''));
+      setBoards(initialBoards);
+      setCurrentPlayer(1);
+      setGameHistory([initialBoards]);
+      setShowWinnerModal(false);
+    },
+    []
+  );
 
   useEffect(() => {
     resetGame(numberOfBoards, boardSize);
@@ -94,50 +108,73 @@ function App() {
     }
   }, [coins, XP, user, dataLoaded]);
 
-  const isBoardDead = useCallback((board: BoardState) => {
-    const size = boardSize;
-    for (let i = 0; i < size; i++) {
-      const row = board.slice(i * size, (i + 1) * size);
-      const col = Array.from({ length: size }, (_, j) => board[i + j * size]);
-      if (row.every(c => c === 'X') || col.every(c => c === 'X')) return true;
-    }
-    const diag1 = Array.from({ length: size }, (_, i) => board[i * (size + 1)]);
-    const diag2 = Array.from({ length: size }, (_, i) => board[(i + 1) * (size - 1)]);
-    return diag1.every(c => c === 'X') || diag2.every(c => c === 'X');
-  }, [boardSize]);
-
-  const handleMove = useCallback((boardIndex: number, cellIndex: number) => {
-    if (boards[boardIndex][cellIndex] !== '' || isBoardDead(boards[boardIndex])) return;
-
-    const newBoards = boards.map((board, idx) =>
-      idx === boardIndex ? [...board.slice(0, cellIndex), 'X', ...board.slice(cellIndex + 1)] : [...board]
-    );
-    playMoveSound(mute);
-    setBoards(newBoards);
-    setGameHistory([...gameHistory, newBoards]);
-
-    if (newBoards.every(board => isBoardDead(board))) {
-      const loser = currentPlayer;
-      const winnerNum = loser === 1 ? 2 : 1;
-      const isHumanWinner = gameMode === 'vsComputer' && winnerNum === 1;
-      const isComputerWinner = gameMode === 'vsComputer' && winnerNum === 2;
-      const rewards = calculateRewards(isHumanWinner, difficulty, numberOfBoards, boardSize);
-
-      if (isHumanWinner) {
-        setCoins(coins + rewards.coins);
-        setXP(XP + rewards.xp);
+  const isBoardDead = useCallback(
+    (board: BoardState) => {
+      const size = boardSize;
+      for (let i = 0; i < size; i++) {
+        const row = board.slice(i * size, (i + 1) * size);
+        const col = Array.from({ length: size }, (_, j) => board[i + j * size]);
+        if (row.every((c) => c === 'X') || col.every((c) => c === 'X')) return true;
       }
-      if (isComputerWinner) {
-        setXP(Math.round(XP + rewards.xp * 0.25));
-      }
-      setWinner(winnerNum === 1 ? player1Name : player2Name);
-      setShowWinnerModal(true);
-      playWinSound(mute);
-      return;
-    }
+      const diag1 = Array.from({ length: size }, (_, i) => board[i * (size + 1)]);
+      const diag2 = Array.from({ length: size }, (_, i) => board[(i + 1) * (size - 1)]);
+      return diag1.every((c) => c === 'X') || diag2.every((c) => c === 'X');
+    },
+    [boardSize]
+  );
 
-    setCurrentPlayer(prev => (prev === 1 ? 2 : 1));
-  }, [boards, currentPlayer, gameMode, boardSize, numberOfBoards, coins, XP, isBoardDead, difficulty, player1Name, player2Name, mute]);
+  const handleMove = useCallback(
+    (boardIndex: number, cellIndex: number) => {
+      if (boards[boardIndex][cellIndex] !== '' || isBoardDead(boards[boardIndex])) return;
+
+      const newBoards = boards.map((board, idx) =>
+        idx === boardIndex ? [...board.slice(0, cellIndex), 'X', ...board.slice(cellIndex + 1)] : [...board]
+      );
+      playMoveSound(mute);
+      setBoards(newBoards);
+      setGameHistory([...gameHistory, newBoards]);
+
+      if (newBoards.every((board) => isBoardDead(board))) {
+        const loser = currentPlayer;
+        const winnerNum = loser === 1 ? 2 : 1;
+        const isHumanWinner = gameMode === 'vsComputer' && winnerNum === 1;
+        const isComputerWinner = gameMode === 'vsComputer' && winnerNum === 2;
+        const rewards = calculateRewards(isHumanWinner, difficulty, numberOfBoards, boardSize);
+
+        if (isHumanWinner) {
+          setCoins(coins + rewards.coins);
+          setXP(XP + rewards.xp);
+        }
+        if (isComputerWinner) {
+          setXP(Math.round(XP + rewards.xp * 0.25));
+        }
+
+        setWinner(winnerNum === 1 ? player1Name : player2Name);
+        setShowWinnerModal(true);
+        playWinSound(mute);
+        return;
+      }
+
+      setCurrentPlayer((prev) => (prev === 1 ? 2 : 1));
+    },
+    [
+      boards,
+      currentPlayer,
+      gameMode,
+      boardSize,
+      numberOfBoards,
+      coins,
+      XP,
+      isBoardDead,
+      difficulty,
+      player1Name,
+      player2Name,
+      mute,
+      setCoins,
+      setXP,
+      gameHistory,
+    ]
+  );
 
   useEffect(() => {
     if (gameMode === 'vsComputer' && currentPlayer === 2) {
@@ -146,41 +183,41 @@ function App() {
           const move = findBestMove(boards, difficulty, boardSize, numberOfBoards);
           if (move) handleMove(move.boardIndex, move.cellIndex);
         } catch (error) {
-          console.error("Error finding the best move:", error);
+          console.error('Error finding the best move:', error);
         }
       }, 500);
       return () => clearTimeout(timeout);
     }
   }, [currentPlayer, gameMode, boards, difficulty, boardSize, numberOfBoards, handleMove]);
 
-  const handleBoardConfigChange = (num: number, size: number) => {
-    setNumberOfBoards(Math.min(5, Math.max(1, num)));
-    setBoardSize(size as BoardSize);
-    setShowBoardConfig(false);
-    resetGame(num, size as BoardSize);
-  };
-
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (gameHistory.length >= 3) {
       if (coins >= 100) {
         setCoins(coins - 100);
         setBoards(gameHistory[gameHistory.length - 3]);
-        setGameHistory(h => h.slice(0, -2));
+        setGameHistory((h) => h.slice(0, -2));
       } else {
         console.log('Insufficient Coins');
       }
     } else {
       console.log('No Moves');
     }
-  };
+  }, [gameHistory, coins, setCoins]);
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     if (coins >= 200) {
       setCoins(coins - 200);
-      setCurrentPlayer(prev => (prev === 1 ? 2 : 1));
+      setCurrentPlayer((prev) => (prev === 1 ? 2 : 1));
     } else {
       console.log('Insufficient Coins');
     }
+  }, [coins, setCoins]);
+
+  const handleBoardConfigChange = (num: number, size: number) => {
+    setNumberOfBoards(Math.min(5, Math.max(1, num)));
+    setBoardSize(size as BoardSize);
+    setShowBoardConfig(false);
+    resetGame(num, size as BoardSize);
   };
 
   const handleSignIn = async () => {
