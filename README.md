@@ -65,10 +65,6 @@ This project combines third-party packages to add crucial features to the app:
 
 The game client uses a retro 8-bit theme with nostalgic sound effects. And all features work seamlessly on both desktop and mobile browsers.
 
-## :page_facing_up: Reference Documentation
-
-See the [reference PowerPoint][8] to learn more about the project.
-
 ## :rocket: Planned Features
 
 1. Global leaderboard (XP-based)
